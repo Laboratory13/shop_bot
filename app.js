@@ -207,6 +207,10 @@ bot.on( message("text"), async(ctx, next)=>{
                     lang.soon,
                 );
             }
+        }else{
+            var cat = await get_all_catalogs();
+            await ctx.reply( lang.catalog, kb.make_cat( lang, cat ) );
+            await change_status( ctx.from.id, "catalog" );
         }
     }else if ( status === "ready" && check_word("savat", ctx.message.text) ){
         var [str, orders] = await get_orders( lang, ctx.from.id );
@@ -234,6 +238,9 @@ bot.on( message("text"), async(ctx, next)=>{
     }else if ( status === "ready" && check_word("my_aks", ctx.message.text) ){
         spenditure = await get_spenditure( ctx.from.id );
         await ctx.reply( lang.you_spend + spenditure );
+    }else{
+        await change_status( ctx.from.id, "ready" );
+        await ctx.reply( lang.main_menu, kb.main( lang ) ); 
     }
 });
 
