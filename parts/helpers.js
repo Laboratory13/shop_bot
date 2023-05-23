@@ -19,6 +19,10 @@ async function check_status(id){
     }
 }
 
+function beauty(number){
+    return number.toLocaleString().replace(/,/g," ",)
+}
+
 function get_lang(str_lang){
     if(str_lang === "en"){
         return filesys_en;
@@ -102,7 +106,7 @@ async function check_prod( prod, lang ){
 
 async function get_all_catalogs(){
     try {
-        ans = await dbase(`SELECT DISTINCT cat FROM products`);
+        ans = await dbase(`SELECT * FROM category`);
         return ans;
     } catch (error) {
         console.log(error);
@@ -124,7 +128,7 @@ async function add_order(user_id, prod_id, count, lang){
             }
             const price = ans[0]["price"];
             const name = ans[0]["name_" + lang.str];
-            return "✅" + lang.added + "\n\n" + name + "  " + count + " x " + price + " = " + (price * count) + " UZS"
+            return "✅" + lang.added + "\n\n" + name + "  " + count + " x " + beauty(price * 1) + " = " + beauty(price * count) + lang.sum
         }
     } catch (error) {
         console.log(error);
@@ -142,12 +146,12 @@ async function get_orders( lang, user_id ){
         var sum = 0
         ans.forEach(order => {
             sum = sum + (order["price"] * order["count"]);
-            ret_str = ret_str + order["name_" + lang.str] + " x " + order["count"] + " x " + order["price"] + " = " + (order["price"] * order["count"]) + " UZS\n"
+            ret_str = ret_str + order["name_" + lang.str] + " x " + order["count"] + " x " + beauty( order["price"] * 1 ) + " = " + beauty(order["price"] * order["count"]) + lang.sum + "\n"
         });
         if (ans.length === 0){
             ret_str = ret_str + lang.empty
         }else{
-            ret_str = ret_str + "\n" + lang.sum + sum
+            ret_str = ret_str + "\n" + lang.suma + beauty( sum ) + lang.sum
         }
         return [ ret_str, ans ];
     } catch (error) {
@@ -252,7 +256,18 @@ async function get_admins(){
     }
 }
 
-async function get_catalog(cat){
+
+async function get_catalog(cat, lang){
+    try {
+        ans = await dbase( `SELECT * FROM category WHERE name_${lang.str} = ?`, [cat] );
+        return [await dbase( "SELECT * FROM products WHERE cat = ?", [ ans[0]["name"] ] ), ans[0]["name"]];
+    } catch (error) {
+        console.log(error);
+        return [[], ""];
+    }
+}
+
+async function get_catalog2(cat){
     try {
         return await dbase( "SELECT * FROM products WHERE cat = ?", [cat] );
     } catch (error) {
@@ -268,7 +283,7 @@ async function get_msg_id( cat ){
         return [ ans[0]["msg_id"], ans[0]["video"], ans[0]["id"] ];
     } catch (error) {
         console.log(error);
-        return 0;
+        return [0, 0, 0];
     }
 }
 
@@ -316,3 +331,4 @@ module.exports.get_catalog = get_catalog;
 module.exports.set_msg_id = set_msg_id;
 module.exports.get_msg_id = get_msg_id;
 module.exports.set_photo_id = set_photo_id;
+module.exports.beauty = beauty;

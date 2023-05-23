@@ -1,6 +1,6 @@
 module.exports = {
     str: "en",
-    catalog: "Catalog 📚",
+    catalog: "Catalog 🗂",
     main_menu: "Main menu",
     not_your: "This is not your contact",
     share_contact: "Share contact",
@@ -15,7 +15,7 @@ module.exports = {
     back: "Back ⬅️",
     name_changed: "Name changed: ",
     choose: "Choose from list",
-    price: "Price (UZS): ",
+    price: "Price: ",
     add_cart: "Add to cart",
     not_found: "Product not found",
     added: "Added to cart: ",
@@ -35,5 +35,6 @@ module.exports = {
     order_confirmed: "Your order is accepted.",
     no_cat: "No such category",
     mass: "Weight: ",
-    soon: "Soon!"
+    soon: "Soon!",
+    sum: " sum"
 }

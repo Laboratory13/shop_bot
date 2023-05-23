@@ -4,7 +4,7 @@ var lang = {
     reply_markup:{
         keyboard:[
             [
-                {text: "En 🏴󠁧󠁢󠁥󠁮󠁧󠁿"}, {text: "Uz 🇺🇿"}, {text: "Ru 🇷🇺"}
+                {text: "Uz 🇺🇿"}, {text: "Ru 🇷🇺"}, {text: "En 🏴󠁧󠁢󠁥󠁮󠁧󠁿"}
             ]
         ],
         resize_keyboard: true,
@@ -17,7 +17,7 @@ var lang_b = function( lang ){
         reply_markup:{
             keyboard:[
                 [
-                    {text: "En 🏴󠁧󠁢󠁥󠁮󠁧󠁿"}, {text: "Uz 🇺🇿"}, {text: "Ru 🇷🇺"}
+                    {text: "Uz 🇺🇿"}, {text: "Ru 🇷🇺"}, {text: "En 🏴󠁧󠁢󠁥󠁮󠁧󠁿"}
                 ],[
                     {text: lang.back}
                 ]
@@ -97,7 +97,7 @@ var catalog = function( lang, cat ){
 var make_cat = function( lang, cat ){
     var arr = [];
     cat.forEach(item => {
-        arr.push(item["cat"]);
+        arr.push(item["name_" + lang.str]);
     });
     arr.push( lang.back );
     return Keyboard.make( arr,{ columns: 2, }).reply();

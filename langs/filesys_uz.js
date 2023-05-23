@@ -1,6 +1,6 @@
 module.exports = {
     str: "uz",
-    catalog: "Katalog 📚",
+    catalog: "Katalog 🗂",
     main_menu: "Bosh menyu",
     not_your: "Bu sizning kontaktingiz emas",
     share_contact: "Kontaktni yuborish",
@@ -15,7 +15,7 @@ module.exports = {
     back: "Ortga ⬅️",
     name_changed: "Ism o'zgartirildi: ",
     choose: "Tanlang",
-    price: "Narxi (UZS): ",
+    price: "Narxi: ",
     add_cart: "Savatga qo'shish",
     not_found: "Mahsulot topilmadi",
     added: "Savatga qo'shildi: ",
@@ -24,7 +24,7 @@ module.exports = {
     empty: "Bo'sh",
     clear: "Tozalash 🔄",
     order: "Buyurtirish ✅",
-    sum: "Jami: ",
+    suma: "Jami: ",
     deliver: "Qayerga yetkazish kerak?",
     share_location: "Lokatsiya yuborish",
     deliver_time: "Sizning buyurtmangiz 2 kun ichida yetkazib beriladi",
@@ -34,6 +34,7 @@ module.exports = {
     order_confirmed: "Sizning buyurtmangiz qabul qilindi.",
     no_cat: "Bunday tur mavjud emas",
     mass: "Og'irligi: ",
-    soon: "Tez orada!"
+    soon: "Tez orada!",
+    sum: " so'm"
 }
 // Indiyskiy cherniy chay
