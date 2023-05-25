@@ -25,16 +25,18 @@ module.exports = {
     clear: "Tozalash 🔄",
     order: "Buyurtirish ✅",
     suma: "Jami: ",
-    deliver: "Qayerga yetkazish kerak?",
+    deliver: "Yetkazib berish joyini yozing yoki lokatsiya yuboring.",
     share_location: "Lokatsiya yuborish",
-    deliver_time: "Sizning buyurtmangiz 2 kun ichida yetkazib beriladi",
+    deliver_time: "Buyurtmani tasdiqlang va operator siz bilan tez orada bog'lanadi.",
     confirm: "Tasdiqlash ✅",
     coming_soon: "Tez orada!",
     you_spend: "Sizning buyurtmalaringiz: ",
     order_confirmed: "Sizning buyurtmangiz qabul qilindi.",
-    no_cat: "Bunday tur mavjud emas",
+    no_cat: "Bunday tur mavjud emas!",
     mass: "Og'irligi: ",
     soon: "Tez orada!",
-    sum: " so'm"
+    sum: " so'm",
+    gram: "g.",
+    location: "Lokatsiya: ",
+    aksiya_str: "6 ta Famila Herbal mahsulotlarini sotib oling va uch xil Famila Hind qora choyidan 1 tasini oling!"
 }
-// Indiyskiy cherniy chay

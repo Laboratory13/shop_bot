@@ -1,7 +1,8 @@
 const { locate, match_products, clear_order, remove_order, get_count, get_orders, add_order, 
     check_prod, check_status, add_lang, check_lang, check_word, change_status, set_name, 
     add_contact, get_lang, get_cat, get_spenditure, add_admin, get_admins, get_all_catalogs, 
-    get_catalog, set_msg_id, get_msg_id, set_photo_id, beauty } = require("./parts/helpers");
+    get_catalog, set_msg_id, get_msg_id, set_photo_id, beauty, locate_str, dislocate, 
+    get_sales, get_sale, set_aksiya_pic } = require("./parts/helpers");
 
 
 const { Telegraf } = require('telegraf');
@@ -9,6 +10,8 @@ const { message } = require('telegraf/filters');
 const kb = require('./parts/keyb.js');
 // const bot = new Telegraf('5924453603:AAGU-6v7pk6wqxJTUO_-2TmNb0lZfpW_cP0'); production
 const bot = new Telegraf('477383024:AAE33xFWSas6jRROncgrsVOacJrrsDtHCkI');
+
+var aksiya_pic = "";
 
 function markdowner(text){
     return text
@@ -147,7 +150,12 @@ const send_to_admins = async (order)=>{
     var phone = order[0]["phone"];
     var send_str = `Новый заказ от: ${username} \nТел: ${phone} \nЯзык: ${lang} \nВремя: ${date}\n`;
     var sum = 0
-    var location = order[0]["location"].split("_");
+    var location = [0, 0]
+    if( order[0]["location"] ){
+        location = order[0]["location"].split("_");
+    }
+    var location_str = "\n\n\nЛокация: " + order[0]["location_str"];
+    
     order.forEach((prod, i) =>{
         var prod_name = prod["name_ru"];
         var count = prod["count"];
@@ -155,11 +163,17 @@ const send_to_admins = async (order)=>{
         send_str = send_str + ( i + 1 ) + ". " + prod_name + " x " + count + " = " + beauty(count * price) + " сум \n";
         sum = sum + (count * price);
     });
-    send_str = send_str + "На общую сумму: " + beauty(sum) + " сум";
-    admins.forEach(admin => {
-        bot.telegram.sendMessage( admin, send_str );
-        bot.telegram.sendLocation( admin, location[0], location[1] );
-    });
+    send_str = send_str + "\nНа общую сумму: " + beauty(sum) + " сум";
+    if( location[0] != 0 && location[1] != 0 ){
+        admins.forEach(admin => {
+            bot.telegram.sendMessage( admin, send_str );
+            bot.telegram.sendLocation( admin, location[0], location[1] );
+        });
+    }else{
+        admins.forEach(admin => {
+            bot.telegram.sendMessage( admin, send_str + location_str);
+        });
+    }
 };
 
 // Catalog -> catalog, cart, order
@@ -182,13 +196,19 @@ bot.on( message("text"), async(ctx, next)=>{
         }else{
             [msg_id, vid, cat_id] = await get_msg_id( cata_id ); // getting file_id of previously uploaded video
             if( vid ){
-                if( msg_id == 0 ){
+                if( msg_id != 0 ){
+                    try {
+                        await ctx.replyWithVideo( msg_id );
+                        // console.log( "Jasur: " + msg_id );
+                    } catch (error) {
+                        ret_id = await ctx.replyWithVideo({ source: './video/' + vid });
+                        // console.log( "1 Save: " + ret_id.video.file_id );
+                        await set_msg_id( cat_id, ret_id.video.file_id );
+                    }
+                }else{
                     ret_id = await ctx.replyWithVideo({ source: './video/' + vid });
                     // console.log( "Save: " + ret_id.video.file_id );
                     await set_msg_id( cat_id, ret_id.video.file_id );
-                }else{
-                    // console.log( "Jasur: " + msg_id );
-                    await ctx.replyWithVideo( msg_id );
                 }
             }
             await ctx.reply( lang.choose, kb.catalog( lang, prods ) ) ;
@@ -203,16 +223,22 @@ bot.on( message("text"), async(ctx, next)=>{
         if( prod ){
             var num = await get_count( ctx.from.id, prod["prod_id"] )
             if( prod["file_id"] ){
-                // console.log("jas");
-                await ctx.replyWithPhoto( prod["file_id"] );
+                try {
+                    await ctx.replyWithPhoto( prod["file_id"] );
+                    // console.log("jas ", prod["file_id"]);
+                } catch (error) {
+                    ret_id = await ctx.replyWithPhoto({ source: './imgs/' + prod["picture"] });
+                    // console.log( "1 save ", ret_id.photo[ret_id.photo.length - 1].file_id );
+                    await set_photo_id( prod["prod_id"], ret_id.photo[ret_id.photo.length - 1].file_id );
+                }
             }else{
-                // console.log("save");
                 ret_id = await ctx.replyWithPhoto({ source: './imgs/' + prod["picture"] });
-                // console.log(ret_id.photo[ret_id.photo.length - 1].file_id);
+                // console.log( "save", ret_id.photo[ret_id.photo.length - 1].file_id );
                 await set_photo_id( prod["prod_id"], ret_id.photo[ret_id.photo.length - 1].file_id );
             }
             if( prod["on_sale"] == 1){
-                reply_str = "*" + prod["name_" + lang.str] + "*" + "\n\n" + prod["desc_" + lang.str] + "\n\n" + "*" + lang.price + beauty(prod["price"] * 1) + lang.sum + "\n" + lang.mass + prod["mass"] + "*"
+                reply_str = "*" + prod["name_" + lang.str] + "*" + "\n\n" + prod["desc_" + lang.str] + "\n\n" + "*" + lang.price + 
+                    beauty(prod["price"] * 1) + lang.sum + "\n" + lang.mass + prod["mass"] + lang.gram + "*"
                 await ctx.replyWithMarkdownV2( 
                     markdowner(reply_str),
                     kb.prod( prod["prod_id"], lang, num )
@@ -237,11 +263,16 @@ bot.on( message("text"), async(ctx, next)=>{
     }else if ( status === "cart" && check_word("back", ctx.message.text) ){
         await change_status( ctx.from.id, "ready" );
         await ctx.reply( lang.main_menu, kb.main( lang ) ); 
-    }else if ( status === "order" && check_word("back", ctx.message.text) ){
+    }else if ( (status === "location" || status === "order" || status === "aksiya") && check_word("back", ctx.message.text) ){
         await change_status( ctx.from.id, "ready" );
         await ctx.reply( lang.main_menu, kb.main( lang ) );
+        await dislocate( ctx.from.id ); // changes status of order in db from "order" to "new" 
+    }else if( status === "location" ){
+        await locate_str( ctx.from.id, ctx.message.text); // changes status of order in db from "new" to "order"
+        await change_status( ctx.from.id, "order" );
+        await ctx.reply( lang.deliver_time, kb.confirm( lang ));
     }else if ( status === "order" && check_word("confirm", ctx.message.text) ){
-        order = await match_products( ctx.from.id );
+        order = await match_products( ctx.from.id ); // changes status of order in db from "order" to "confirmed"
         await send_to_admins( order );
         await change_status( ctx.from.id, "ready" );
         await ctx.reply( lang.order_confirmed, kb.main( lang ) );
@@ -253,7 +284,61 @@ bot.on( message("text"), async(ctx, next)=>{
 bot.on( message("text"), async(ctx, next)=>{
     var [status, lang] = await check_status( ctx.from.id );
     if ( status === "ready" && check_word("aksiya", ctx.message.text) ){
-        await ctx.reply(lang.coming_soon);
+        sales = await get_sales(); // get all aksiya
+        if (sales.length === 0){
+            await ctx.reply( lang.soon );
+        }else{
+            await ctx.reply( lang.choose, kb.catalog(lang, sales) );
+            await change_status( ctx.from.id, "aksiya" );
+        }
+
+        // await ctx.reply(lang.coming_soon);
+        
+        // if( aksiya_pic ){
+        //     try {
+        //         await ctx.replyWithPhoto( aksiya_pic, {caption: "This is caption*"} );
+        //         console.log("jas ", aksiya_pic );
+        //     } catch (error) {
+        //         ret_id = await ctx.replyWithPhoto({ source: './imgs/aksiya.jpg' });
+        //         console.log( "1 save ", ret_id.photo[ret_id.photo.length - 1].file_id );
+        //         aksiya_pic =  ret_id.photo[ret_id.photo.length - 1].file_id;
+        //     }
+        // }else{
+        //     ret_id = await ctx.replyWithPhoto({ source: './imgs/aksiya.jpg' });
+        //     console.log( "save", ret_id.photo[ret_id.photo.length - 1].file_id );
+        //     aksiya_pic =  ret_id.photo[ret_id.photo.length - 1].file_id;
+        // }
+        // await ctx.reply( lang.aksiya_str)
+    }else if( status === "aksiya" ){
+        sale = await get_sale(ctx.message.text, lang);
+        if( sale.length === 0 ){
+            sales = await get_sales(); // get all aksiya
+            await ctx.reply( lang.no_cat, kb.catalog(lang, sales) );
+            await change_status( ctx.from.id, "aksiya" );
+        }else{
+            aksiya_pic = sale[0]["photo"];
+            aksiya_pic_id = sale[0]["photo_id"];
+            desc = sale[0]["desc_" + lang.str];
+            sale_id = sale[0]["id"]
+            if( aksiya_pic ){
+                if( aksiya_pic_id ){
+                    try {
+                        await ctx.replyWithPhoto( aksiya_pic_id, {caption: desc} );
+                        // console.log("jas ", aksiya_pic );
+                    } catch (error) {
+                        ret_id = await ctx.replyWithPhoto({ source: './imgs/' + aksiya_pic }, {caption: desc} );
+                        // console.log( "1 save ", ret_id.photo[ret_id.photo.length - 1].file_id );
+                        set_aksiya_pic(ret_id.photo[ret_id.photo.length - 1].file_id, sale_id);
+                    }
+                }else{
+                    ret_id = await ctx.replyWithPhoto({ source: './imgs/' + aksiya_pic }, {caption: desc} );
+                    // console.log( "save", ret_id.photo[ret_id.photo.length - 1].file_id );
+                    set_aksiya_pic(ret_id.photo[ret_id.photo.length - 1].file_id, sale_id);
+                }
+            }else{
+                await ctx.reply( desc );
+            }
+        }
     }else if ( status === "ready" && check_word("my_aks", ctx.message.text) ){
         spenditure = await get_spenditure( ctx.from.id );
         await ctx.reply( lang.you_spend + beauty(spenditure) + lang.sum );
@@ -267,9 +352,10 @@ bot.on( message("text"), async(ctx, next)=>{
 // share location
 bot.on(message("location"), async(ctx, next)=>{
     var [status, lang] = await check_status( ctx.from.id );
-    if( status === "order" ){
+    if( status === "location" ){
         await locate( ctx.from.id, ctx.message.location.latitude + "_" + ctx.message.location.longitude );
-        await ctx.reply( lang.deliver_time, kb.confirm( lang ))
+        await change_status( ctx.from.id, "order" );
+        await ctx.reply( lang.deliver_time, kb.confirm( lang ));
     }
 });
 
@@ -341,7 +427,7 @@ bot.on('callback_query', async (ctx) => {
         await change_status( ctx.from.id, "ready" );
         await ctx.reply( lang.main_menu, kb.main( lang ) ); 
     } else if ( resp[0] === "order" ){
-        await change_status( ctx.from.id, "order" );
+        await change_status( ctx.from.id, "location" );
         await ctx.editMessageReplyMarkup( undefined );
         // await match_products( ctx.from.id );
         await ctx.reply( lang.deliver, kb.location( lang ) );

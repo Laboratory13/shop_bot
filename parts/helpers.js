@@ -193,7 +193,7 @@ async function clear_order( user_id ){
 async function match_products( user_id ){
     try {
         ans = await dbase(`
-            SELECT orders.id as id, user_id, orders.prod_id AS prod_id, count, price, order_date, location, name, lang, phone, name_ru 
+            SELECT orders.id as id, user_id, orders.prod_id AS prod_id, count, price, order_date, location, location_str, name, lang, phone, name_ru 
             FROM orders 
             JOIN products ON orders.prod_id = products.prod_id AND user_id = ? AND status = ?
             JOIN users ON orders.user_id = users.id`, [user_id, "order"] );
@@ -206,9 +206,25 @@ async function match_products( user_id ){
     }
 }
 
+async function locate_str( user_id, location ){
+    try {
+        await dbase("UPDATE orders SET status = ?, order_date = NOW(), location = ?, location_str = ? WHERE user_id = ? AND status = ?", [ "order", "", location, user_id, "new" ]);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 async function locate( user_id, location ){
     try {
-        await dbase("UPDATE orders SET status = ?, order_date = NOW(), location = ? WHERE user_id = ? AND status = ?", [ "order", location, user_id, "new" ]);
+        await dbase("UPDATE orders SET status = ?, order_date = NOW(), location = ?, location_str = ? WHERE user_id = ? AND status = ?", [ "order", location, "", user_id, "new" ]);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function dislocate( user_id ){
+    try {
+        await dbase("UPDATE orders SET status = ?, location = ?, location_str = ? WHERE user_id = ? AND status = ?", [ "new", "", "", user_id, "order" ]);
     } catch (error) {
         console.log(error);
     }
@@ -305,6 +321,32 @@ async function set_photo_id( prod_id, file_id ){
     }
 }
 
+async function get_sales(){
+    try {
+        return await dbase(`SELECT * FROM aksiya`);
+    } catch (error) {
+        console.log(error);
+        return [];
+    }
+}
+
+async function get_sale(name, lang){
+    try {
+        return await dbase(`SELECT * FROM aksiya WHERE name_${lang.str} = ?`, [name]);
+    } catch (error) {
+        console.log(error);
+        return [];
+    }
+}
+
+async function set_aksiya_pic(pic_id, sale_id){
+    try {
+        await dbase(`UPDATE aksiya SET photo_id = ? WHERE id = ?`, [pic_id, sale_id]);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 
 module.exports.check_status = check_status;
 module.exports.add_lang = add_lang;
@@ -332,3 +374,8 @@ module.exports.set_msg_id = set_msg_id;
 module.exports.get_msg_id = get_msg_id;
 module.exports.set_photo_id = set_photo_id;
 module.exports.beauty = beauty;
+module.exports.locate_str = locate_str;
+module.exports.dislocate = dislocate;
+module.exports.get_sales = get_sales;
+module.exports.get_sale = get_sale;
+module.exports.set_aksiya_pic = set_aksiya_pic;
